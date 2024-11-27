@@ -1,5 +1,10 @@
 
+
+using Microsoft.IdentityModel.Tokens;
+using SurvayBasket.DependancyInjection;
+using SurvayBasket.ErrorHandling;
 using SurvayBasket.Service;
+using System.Text;
 
 namespace SurvayBasket
 {
@@ -9,13 +14,8 @@ namespace SurvayBasket
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            builder.Services.AddDependancyInjection(builder.Configuration);
 
-            builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
-            builder.Services.AddScoped<IPollsService,PollsService>();
 
             var app = builder.Build();
 
@@ -26,12 +26,15 @@ namespace SurvayBasket
                 app.UseSwaggerUI();
             }
 
+            app.UseStatusCodePagesWithReExecute("/errors/{0}");
             app.UseHttpsRedirection();
-
+            app.UseCors("ServayBasketPolicy");
+            app.UseAuthentication();
             app.UseAuthorization();
 
 
             app.MapControllers();
+            app.UseExceptionHandler();
 
             app.Run();
         }

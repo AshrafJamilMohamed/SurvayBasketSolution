@@ -25,8 +25,9 @@ namespace SurvayBasket.Contracts.Validations.AnswerValidation
                         return new ValidationResult("Duplicate answers are not allowed.");
                     }
                 }
-
+                
                 return ValidationResult.Success;
+                
             }
             return new ValidationResult($"The field {validationContext.DisplayName} must have at least {_mincount} items.");
         }

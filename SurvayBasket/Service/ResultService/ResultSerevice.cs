@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore.ChangeTracking;
 using SurvayBasket.Contracts.Result;
 
-namespace SurvayBasket.Service
+namespace SurvayBasket.Service.ResultService
 {
     public class ResultSerevice : IResultSerevice
     {

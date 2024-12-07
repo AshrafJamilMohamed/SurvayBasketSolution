@@ -1,8 +1,7 @@
 ﻿
-using SurvayBasket.ErrorHandling;
-using SurvayBasket.Service;
-using SurvayBasket.Service.Question;
-using SurvayBasket.Service.VoteService;
+using SurvayBasket.Service.Account;
+using SurvayBasket.Service.AuthService;
+using SurvayBasket.Service.ResultService;
 
 namespace SurvayBasket.DependancyInjection
 {
@@ -14,6 +13,8 @@ namespace SurvayBasket.DependancyInjection
 
             services.AddControllers();
             services.AddSwagger();
+
+
 
             services.AddPolices(configuration);
             // Add AutoMapper
@@ -32,14 +33,24 @@ namespace SurvayBasket.DependancyInjection
 
             services.AddScoped<IQuestionService, QuestionService>();
 
+            services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IEmailSender, EmailSender>();
             services.AddScoped<IVoteService, VoteService>();
             services.AddScoped<IResultSerevice, ResultSerevice>();
+            services.AddScoped<ICachingService, CachingService>();
+            services.AddScoped<IUserAccountService, UserAccountService>();
+
 
             services.AddExceptionHandler<ExceptionHandlerMiddlWare>();
             services.AddProblemDetails();
+
+            // To map MailSettings class with MailSettings in appsetting file
+            services.Configure<MailSettings>(configuration.GetSection(nameof(MailSettings)));
+
             // Allow Dependancy Injection For usermanager,signinmanager,rolemanager
             services.AddIdentity<ApplicationUser, IdentityRole>()
-                                          .AddEntityFrameworkStores<ApplicationDbContext>();
+                                          .AddEntityFrameworkStores<ApplicationDbContext>()
+                                          .AddDefaultTokenProviders();
 
             services.AddScoped<ApplicationUser>();
             services.AddTokenValidation(configuration);
@@ -84,6 +95,13 @@ namespace SurvayBasket.DependancyInjection
 
                 });
 
+            services.Configure<IdentityOptions>(O =>
+                {
+                    O.SignIn.RequireConfirmedEmail = true;
+                    O.User.RequireUniqueEmail = true;
+
+                }
+                );
             return services;
 
 

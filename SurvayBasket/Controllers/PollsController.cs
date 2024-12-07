@@ -25,12 +25,15 @@ namespace SurvayBasket.Controllers
         }
 
         [HttpGet("GetAll")]
+        // [ResponseCache(Duration = 60)]
         public async Task<IActionResult> GetAll() => Ok(await pollsService.GetAll());
 
         [HttpGet("current")]
         public async Task<IActionResult> GetCurrentAll() => Ok(await pollsService.GetCurrentAll());
 
         [HttpGet("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PollResponse))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(APIErrorResponse))]
         public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
         {
             var poll = await pollsService.GetPollById(id, cancellationToken);
@@ -41,6 +44,9 @@ namespace SurvayBasket.Controllers
         }
 
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PollResponse))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(APIErrorResponse))]
+
         public async Task<IActionResult> Add(CreatePollRequest poll, CancellationToken cancellationToken)
         {
             var IsDateValid = DateChecker.IsDateValid(poll.StartsAt, poll.EndsAt);
@@ -59,6 +65,8 @@ namespace SurvayBasket.Controllers
         }
 
         [HttpPut]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(APIErrorResponse))]
         public async Task<IActionResult> Update(int id, CreatePollRequest pollRequest, CancellationToken cancellationToken)
         {
             var IsDateValid = DateChecker.IsDateValid(pollRequest.StartsAt, pollRequest.EndsAt);
@@ -75,6 +83,7 @@ namespace SurvayBasket.Controllers
         }
 
         [HttpDelete]
+       
         public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {
             var Result = await pollsService.Delete(id, cancellationToken);

@@ -1,60 +1,90 @@
 ﻿
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using SurvayBasket.Models;
+using SurvayBasket.Service.Caching;
+
 namespace SurvayBasket.Service.Question
 {
     public sealed class QuestionService : IQuestionService
     {
         private readonly ApplicationDbContext dbContext;
         private readonly IMapper mapper;
+        private readonly ICachingService cachingService;
 
-        public QuestionService(ApplicationDbContext dbContext, IMapper mapper)
+        public QuestionService(ApplicationDbContext dbContext, IMapper mapper, ICachingService cachingService)
         {
             this.dbContext = dbContext;
             this.mapper = mapper;
+            this.cachingService = cachingService;
         }
+
+        private const string _cachePrefix = "Available-Questions";
 
         public async Task<(QuestionResponse? questionResponse, string? Message)> GetAsync(int PollId, int id, CancellationToken cancellationToken)
         {
-            var Question = await dbContext.Questions
-                 .Where(q => q.Id == id && q.PollId == PollId)
-                 .Include(a => a.Answer)
-                 .SingleOrDefaultAsync();
+            var key = $"{_cachePrefix}-{PollId}";
 
-            var Message = string.Empty;
-            if (Question is null)
+            var CachedQuestions = await cachingService.GetAsync<QuestionResponse>(key, cancellationToken);
+
+            if (CachedQuestions is null)
             {
-                Message = "Question Is Not Found";
-                return (null, Message!);
+                var Question = await dbContext.Questions
+                     .Where(q => q.Id == id && q.PollId == PollId)
+                     .Include(a => a.Answer)
+                     .SingleOrDefaultAsync(cancellationToken: cancellationToken);
+                var Message = string.Empty;
+                if (Question is null)
+                {
+                    Message = "Question Is Not Found";
+                    return (null, Message!);
+                }
+                var MappedQuestion = mapper.Map<QuestionResponse>(Question);
+
+                await cachingService.SetAsync(key, MappedQuestion, cancellationToken);
+                return (MappedQuestion, Message);
             }
-            var MappedQuestion = mapper.Map<QuestionResponse>(Question);
-            return (MappedQuestion, Message);
 
-
+            return (CachedQuestions, string.Empty);
         }
 
         public async Task<(IReadOnlyList<QuestionResponse>? questionResponse, string? Message)> GetAllAsync(int PollId, CancellationToken cancellationToken)
         {
-            // Check if Poll Is Exit or not
-            var PollIsExits = await dbContext.Polls.AnyAsync(p => p.Id == PollId, cancellationToken: cancellationToken);
-            var Message = string.Empty;
-            if (!PollIsExits)
+            var key = $"{_cachePrefix}-{PollId}";
+            // check caching 
+            var CachedQuesions = await cachingService.GetAsync<IReadOnlyList<QuestionResponse>>(key, cancellationToken);
+
+            if (CachedQuesions is null)
             {
-                Message = "Poll Is Not Found";
-                return (null, Message!);
+
+
+                // Check if Poll Is Exit or not
+                var PollIsExits = await dbContext.Polls.AnyAsync(p => p.Id == PollId, cancellationToken: cancellationToken);
+                var Message = string.Empty;
+                if (!PollIsExits)
+                {
+                    Message = "Poll Is Not Found";
+                    return (null, Message!);
+                }
+                var Questions = await dbContext.Questions
+                    .Where(x => x.PollId == PollId)
+                    .Include(a => a.Answer)
+                    .AsNoTracking()
+                    .ToListAsync(cancellationToken: cancellationToken);
+
+                var QuestionResponse = mapper.Map<IReadOnlyList<QuestionResponse>>(Questions);
+
+                await cachingService.SetAsync(key, QuestionResponse, cancellationToken);
+
+                return (QuestionResponse, null);
             }
-            var Questions = await dbContext.Questions
-                .Where(x => x.PollId == PollId)
-                .Include(a => a.Answer)
-                .AsNoTracking()
-                .ToListAsync();
+            return (CachedQuesions, string.Empty);
 
-            var QuestionResponse = mapper.Map<IReadOnlyList<QuestionResponse>>(Questions);
-
-            return (QuestionResponse, null);
 
         }
 
         public async Task<(QuestionResponse? questionResponse, string? Message)> AddAsync(int pollId, QuestionRequest questionRequest, ApplicationUser user, CancellationToken cancellationToken = default)
         {
+
             // Check if Poll Is Exit or not
             var PollIsExits = await dbContext.Polls.AnyAsync(p => p.Id == pollId, cancellationToken: cancellationToken);
 
@@ -109,12 +139,14 @@ namespace SurvayBasket.Service.Question
                 Answers = questionRequest.Answers
 
             };
-
+            var key = $"{_cachePrefix}-{pollId}";
+            await cachingService.RemoveAsync(key, cancellationToken);
             return (QuestionResponse, null);
         }
 
         public async Task<(bool Result, string? Message)> UpdateAsync(int pollId, int id, QuestionRequest questionRequest, ApplicationUser user, CancellationToken cancellationToken = default)
         {
+            var key = $"{_cachePrefix}-{pollId}";
             // Check on Question
             var questionisexits = await dbContext.Questions
                  .SingleOrDefaultAsync(a =>
@@ -192,6 +224,7 @@ namespace SurvayBasket.Service.Question
 
             await dbContext.SaveChangesAsync(cancellationToken);
 
+            await cachingService.RemoveAsync(key, cancellationToken);
             return (true, string.Empty);
 
         }
@@ -206,15 +239,24 @@ namespace SurvayBasket.Service.Question
             question.IsActive = !question.IsActive;
 
             await dbContext.SaveChangesAsync(cancellationToken);
+
+            var key = $"{_cachePrefix}-{PollId}";
+            await cachingService.RemoveAsync(key, cancellationToken);
             return (true, string.Empty);
 
         }
 
         public async Task<(IReadOnlyList<QuestionResponse>? questionResponse, string? Message)> GetAllAvailableAsync(int PollId, string UserId, CancellationToken cancellationToken)
         {
-            // check on Poll if exist or not and is Available for Voting
+            var key = $"{_cachePrefix}-{PollId}";
+            var CachedQuesions = await cachingService.GetAsync<IReadOnlyList<QuestionResponse>>(key, cancellationToken);
 
-            var Poll = dbContext.Polls.Where(p =>
+            if (CachedQuesions is null)
+            {
+
+                // check on Poll if exist or not and is Available for Voting
+
+                var Poll = dbContext.Polls.Where(p =>
                 p.Id == PollId
                 &&
                 p.IsPublished
@@ -223,31 +265,32 @@ namespace SurvayBasket.Service.Question
                 &&
                 p.EndsAt <= DateOnly.FromDateTime(DateTime.UtcNow));
 
-            if (Poll is null)
-                return (null, "Not Avaliabel For Now");
+                if (Poll is null)
+                    return (null, "Not Avaliabel For Now");
 
-            // Check if this user already voted before
-            var Voted = await dbContext.Votes.AnyAsync(v => v.UserId == UserId && v.PollId == PollId, cancellationToken);
-            if (Voted)
-                return (null, "You have voted before :)");
+                // Check if this user already voted before
+                var Voted = await dbContext.Votes.AnyAsync(v => v.UserId == UserId && v.PollId == PollId, cancellationToken);
+                if (Voted)
+                    return (null, "You have voted before :)");
 
-            // Return Availabel Questions 
-            var Questions = await dbContext.Questions
-                .Where(q => q.IsActive && q.PollId == PollId)
-                .Include(a => a.Answer)
-                .Select(q => new QuestionResponse()
-                {
-                    Id = q.Id,
-                    Content = q.Content,
-                    Answers = q.Answer.Where(x => x.IsActive).Select(ans => new AnswerResponse() { Id = ans.Id, Text = ans.Content })
-                }
-                ).AsNoTracking()
-                .ToListAsync(cancellationToken);
+                // Return Availabel Questions 
+                var Questions = await dbContext.Questions
+                    .Where(q => q.IsActive && q.PollId == PollId)
+                    .Include(a => a.Answer)
+                    .Select(q => new QuestionResponse()
+                    {
+                        Id = q.Id,
+                        Content = q.Content,
+                        Answers = q.Answer.Where(x => x.IsActive).Select(ans => new AnswerResponse() { Id = ans.Id, Text = ans.Content })
+                    }
+                    ).AsNoTracking()
+                    .ToListAsync(cancellationToken);
+                await cachingService.SetAsync(key, Questions, cancellationToken);
 
-            return (Questions, string.Empty);
+                return (Questions, string.Empty);
 
-
-
+            }
+            return (CachedQuesions, string.Empty);
 
 
         }

@@ -1,6 +1,6 @@
 ﻿using SurvayBasket.Contracts.Result;
 
-namespace SurvayBasket.Service
+namespace SurvayBasket.Service.ResultService
 {
     public interface IResultSerevice
     {

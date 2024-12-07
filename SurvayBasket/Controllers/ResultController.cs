@@ -1,4 +1,4 @@
-﻿using SurvayBasket.Service;
+﻿using SurvayBasket.Service.ResultService;
 
 namespace SurvayBasket.Controllers
 {

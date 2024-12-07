@@ -1,10 +1,4 @@
-
-
-using Microsoft.IdentityModel.Tokens;
 using SurvayBasket.DependancyInjection;
-using SurvayBasket.ErrorHandling;
-using SurvayBasket.Service;
-using System.Text;
 
 namespace SurvayBasket
 {
@@ -16,7 +10,8 @@ namespace SurvayBasket
 
             builder.Services.AddDependancyInjection(builder.Configuration);
 
-
+            //  builder.Services.AddResponseCaching();
+            builder.Services.AddDistributedMemoryCache();
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -31,7 +26,8 @@ namespace SurvayBasket
             app.UseCors("ServayBasketPolicy");
             app.UseAuthentication();
             app.UseAuthorization();
-
+            
+            // app.UseResponseCaching();
 
             app.MapControllers();
             app.UseExceptionHandler();

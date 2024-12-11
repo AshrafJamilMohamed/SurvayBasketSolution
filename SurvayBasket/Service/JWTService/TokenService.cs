@@ -1,5 +1,6 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 
+
 namespace SurvayBasket.Service.JWTSericves
 {
     public class TokenService : ITokenService
@@ -10,16 +11,21 @@ namespace SurvayBasket.Service.JWTSericves
         {
             this.configuration = configuration;
         }
-        public string CreateToken(ApplicationUser user)
+        public string CreateToken(ApplicationUser user, IList<string> Roles)
         {
-            Claim[] claims =
-                [
-                  new(JwtRegisteredClaimNames.Sub,user.Id),
-                  new(JwtRegisteredClaimNames.Email,user.Email!),
-                  new(JwtRegisteredClaimNames.Name,user.FristName),
-                  new(JwtRegisteredClaimNames.FamilyName,user.LastName),
-                  new(JwtRegisteredClaimNames.Jti,Guid.NewGuid().ToString())
-                ];
+            var claims = new List<Claim>
+                {
+                    new(JwtRegisteredClaimNames.Sub, user.Id),
+                    new(JwtRegisteredClaimNames.Email, user.Email!),
+                    new(JwtRegisteredClaimNames.Name, user.FristName),
+                    new(JwtRegisteredClaimNames.FamilyName, user.LastName),
+                    new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                };
+            // Add roles as separate claims
+            foreach (var role in Roles)
+              claims.Add(new Claim(ClaimTypes.Role, role));
+            
+
 
             var SummetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:AuthKey"]!));
 

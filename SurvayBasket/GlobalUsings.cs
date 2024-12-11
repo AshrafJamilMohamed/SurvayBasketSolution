@@ -32,7 +32,7 @@ global using SurvayBasket.Service;
 global using SurvayBasket.Service.Caching;
 global using SurvayBasket.Service.EmailService;
 global using SurvayBasket.Service.VoteService;
-
+global using SurvayBasket.DbContextFolder.Constant;
 
 
 

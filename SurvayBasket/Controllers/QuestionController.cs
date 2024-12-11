@@ -55,6 +55,7 @@ namespace SurvayBasket.Controllers
 
 
         [HttpPost]
+        [Authorize(Roles = DefaultRoles.Admin)]
         public async Task<IActionResult> AddQuestion([FromRoute] int pollid, QuestionRequest request, CancellationToken cancellationToken)
         {
             var UserId = User.GetUserId();
@@ -72,6 +73,7 @@ namespace SurvayBasket.Controllers
 
 
         [HttpPut("{id:int}")]
+        [Authorize(Roles = DefaultRoles.Admin)]
         public async Task<IActionResult> UpdateQuestion([FromRoute] int pollid, [FromRoute] int id, QuestionRequest request, CancellationToken cancellationToken)
         {
             var Email = User.FindFirstValue(ClaimTypes.Email);
@@ -90,6 +92,7 @@ namespace SurvayBasket.Controllers
 
 
         [HttpPut("{id:int}/ToggleStatus")]
+        [Authorize(Roles = DefaultRoles.Admin)]
 
         public async Task<IActionResult> ToggleStatus(int pollid, int id, CancellationToken cancellationToken)
         {

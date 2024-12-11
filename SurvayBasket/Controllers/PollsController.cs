@@ -26,14 +26,17 @@ namespace SurvayBasket.Controllers
 
         [HttpGet("GetAll")]
         // [ResponseCache(Duration = 60)]
+        [Authorize(Roles = DefaultRoles.Admin)]
         public async Task<IActionResult> GetAll() => Ok(await pollsService.GetAll());
 
         [HttpGet("current")]
+        [Authorize(Roles = "Member")]
         public async Task<IActionResult> GetCurrentAll() => Ok(await pollsService.GetCurrentAll());
 
         [HttpGet("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PollResponse))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(APIErrorResponse))]
+        [Authorize(Roles = "Member,Admin")]
         public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
         {
             var poll = await pollsService.GetPollById(id, cancellationToken);
@@ -46,6 +49,7 @@ namespace SurvayBasket.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PollResponse))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(APIErrorResponse))]
+        [Authorize(Roles = DefaultRoles.Admin)]
 
         public async Task<IActionResult> Add(CreatePollRequest poll, CancellationToken cancellationToken)
         {
@@ -67,6 +71,7 @@ namespace SurvayBasket.Controllers
         [HttpPut]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(APIErrorResponse))]
+        [Authorize(Roles = DefaultRoles.Admin)]
         public async Task<IActionResult> Update(int id, CreatePollRequest pollRequest, CancellationToken cancellationToken)
         {
             var IsDateValid = DateChecker.IsDateValid(pollRequest.StartsAt, pollRequest.EndsAt);
@@ -83,7 +88,7 @@ namespace SurvayBasket.Controllers
         }
 
         [HttpDelete]
-       
+        [Authorize(Roles = DefaultRoles.Admin)]
         public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {
             var Result = await pollsService.Delete(id, cancellationToken);

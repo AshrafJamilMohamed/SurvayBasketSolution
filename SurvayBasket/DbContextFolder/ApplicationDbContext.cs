@@ -1,17 +1,12 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
-using SurvayBasket.Models;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Reflection;
 
 namespace SurvayBasket.DbContextFolder
 {
-    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
+    public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+                   : IdentityDbContext<ApplicationUser, ApplicationRole, string>(options)
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-            : base(options)
-        {
-
-        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -33,6 +28,13 @@ namespace SurvayBasket.DbContextFolder
 
             base.OnModelCreating(modelBuilder);
 
+        }
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.ConfigureWarnings(warnings =>
+        warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
+
+            base.OnConfiguring(optionsBuilder);
         }
         public DbSet<Poll> Polls { get; set; }
         public DbSet<Question> Questions { get; set; }

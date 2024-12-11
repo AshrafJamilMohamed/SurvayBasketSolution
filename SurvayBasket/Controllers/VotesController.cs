@@ -1,12 +1,12 @@
 ﻿
 using SurvayBasket.Contracts.Vote;
-using SurvayBasket.Service.VoteService;
+
 
 namespace SurvayBasket.Controllers
 {
     [Route("api/polls/{pollId:int}/vote")]
     [ApiController]
-    [Authorize]
+    [Authorize(Roles = $"{DefaultRoles.Admin},{DefaultRoles.Member}")]
     public class VotesController(IQuestionService questionService, IVoteService voteService) : ControllerBase
     {
         private readonly IQuestionService questionService = questionService;
@@ -26,6 +26,7 @@ namespace SurvayBasket.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = DefaultRoles.Admin)]
         public async Task<IActionResult> Add([FromRoute] int pollId, VoteRequest voteRequest, CancellationToken cancellationToken)
         {
             var (Result, Message) = await voteService.AddAsync(pollId, User.GetUserId()!, voteRequest, cancellationToken);

@@ -48,11 +48,12 @@ namespace SurvayBasket.DependancyInjection
             services.Configure<MailSettings>(configuration.GetSection(nameof(MailSettings)));
 
             // Allow Dependancy Injection For usermanager,signinmanager,rolemanager
-            services.AddIdentity<ApplicationUser, IdentityRole>()
+            services.AddIdentity<ApplicationUser, ApplicationRole>()
                                           .AddEntityFrameworkStores<ApplicationDbContext>()
                                           .AddDefaultTokenProviders();
 
             services.AddScoped<ApplicationUser>();
+            services.AddScoped<ApplicationRole>();
             services.AddTokenValidation(configuration);
             return services;
         }
@@ -131,6 +132,11 @@ namespace SurvayBasket.DependancyInjection
                      .AllowAnyHeader()
                      .AllowAnyOrigin();
                 });
+            });
+
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy(DefaultRoles.Member, policy => policy.RequireRole(DefaultRoles.Member));
             });
 
             return services;

@@ -54,6 +54,8 @@ namespace SurvayBasket.Controllers
             if (!Result.Succeeded)
                 return BadRequest(new APIErrorResponse(400, Result.Errors.First().Description));
 
+
+
             var Code = await userManager.GenerateEmailConfirmationTokenAsync(NewUser);
             Code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(Code));
 
@@ -61,7 +63,7 @@ namespace SurvayBasket.Controllers
             //   send email 
             await authService.SendConfirmationEmail(NewUser!, Code);
 
-            return Ok();
+            return NoContent();
 
         }
 
@@ -79,13 +81,14 @@ namespace SurvayBasket.Controllers
             var Result = await signInManager.CheckPasswordSignInAsync(LoginedUser, LoginUser.Password, false);
 
             if (!Result.Succeeded) return Unauthorized();
+          var Roles=  await userManager.GetRolesAsync(LoginedUser);
 
             var User = new UserDTO()
             {
                 Email = LoginUser.Email,
                 FirstName = LoginedUser.FristName,
                 LastName = LoginedUser.LastName,
-                Token = token.CreateToken(LoginedUser)
+                Token =  token.CreateToken(LoginedUser, Roles)
             };
             return Ok(User);
         }
@@ -113,7 +116,10 @@ namespace SurvayBasket.Controllers
             var Result = await userManager.ConfirmEmailAsync(user, Code);
 
             if (Result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(user, DefaultRoles.Member);
                 return Ok();
+            }
             var error = Result.Errors.First();
             return BadRequest(new APIErrorResponse(400, error.Description));
 

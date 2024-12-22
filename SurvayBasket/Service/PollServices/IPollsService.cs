@@ -1,10 +1,11 @@
-﻿using SurvayBasket.Models;
+﻿
+using SurvayBasket.Contracts.Common;
 
 namespace SurvayBasket.Service.PollServices
 {
     public interface IPollsService
     {
-        public Task<IReadOnlyList<PollResponse>> GetAll();
+        public Task<Pagination<PollResponse>> GetAll(RequestFilter requestFilter ,CancellationToken cancellationToken);
         public Task<IReadOnlyList<PollResponse>> GetCurrentAll();
         public Task<Poll?> GetPollById(int id, CancellationToken cancellationToken);
 

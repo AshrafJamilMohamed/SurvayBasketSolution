@@ -1,10 +1,12 @@
-﻿using SurvayBasket.Service.ResultService;
+﻿using Microsoft.AspNetCore.RateLimiting;
+using SurvayBasket.Service.ResultService;
 
 namespace SurvayBasket.Controllers
 {
     [Route("api/polls/{pollId:int}/[controller]")]
     [ApiController]
     [Authorize]
+    [EnableRateLimiting("IPLimiter")]
     public class ResultController : ControllerBase
     {
         private readonly IResultSerevice resultSerevice;

@@ -1,3 +1,5 @@
+using HealthChecks.UI.Client;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using SurvayBasket.DependancyInjection;
 
 namespace SurvayBasket
@@ -26,11 +28,18 @@ namespace SurvayBasket
             app.UseCors("ServayBasketPolicy");
             app.UseAuthentication();
             app.UseAuthorization();
-            
+
             // app.UseResponseCaching();
 
             app.MapControllers();
             app.UseExceptionHandler();
+            app.UseRateLimiter();
+            app.MapHealthChecks("health",new HealthCheckOptions()
+            {
+                ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+              
+
+            });
 
             app.Run();
         }

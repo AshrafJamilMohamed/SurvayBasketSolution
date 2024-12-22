@@ -1,4 +1,5 @@
 ﻿
+using Microsoft.AspNetCore.RateLimiting;
 using SurvayBasket.Contracts.Vote;
 
 
@@ -7,6 +8,7 @@ namespace SurvayBasket.Controllers
     [Route("api/polls/{pollId:int}/vote")]
     [ApiController]
     [Authorize(Roles = $"{DefaultRoles.Admin},{DefaultRoles.Member}")]
+    [EnableRateLimiting("IPLimiter")]
     public class VotesController(IQuestionService questionService, IVoteService voteService) : ControllerBase
     {
         private readonly IQuestionService questionService = questionService;

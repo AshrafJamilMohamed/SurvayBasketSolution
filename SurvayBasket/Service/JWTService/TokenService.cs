@@ -11,7 +11,7 @@ namespace SurvayBasket.Service.JWTSericves
         {
             this.configuration = configuration;
         }
-        public string CreateToken(ApplicationUser user, IList<string> Roles)
+        public string CreateToken(ApplicationUser user, IList<string> Roles,CancellationToken cancellationToken)
         {
             var claims = new List<Claim>
                 {

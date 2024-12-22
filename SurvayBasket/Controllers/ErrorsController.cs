@@ -7,7 +7,7 @@ namespace SurvayBasket.Controllers
     [ApiExplorerSettings(IgnoreApi = true)]
     public class ErrorsController : ControllerBase
     {
-        public IActionResult Error(int Code) => NotFound(new APIErrorResponse(Code, "Error was occured"));
+        public IActionResult Error(int Code) => Problem(statusCode:Code,detail:"There is a Problem");
 
 
 

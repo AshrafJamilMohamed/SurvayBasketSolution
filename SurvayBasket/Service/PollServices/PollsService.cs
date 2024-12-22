@@ -1,6 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using SurvayBasket.DbContextFolder;
-using SurvayBasket.Models;
+﻿
+using SurvayBasket.Contracts.Common;
+using SurvayBasket.Helper;
+using System.Collections.Generic;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace SurvayBasket.Service.PollServices
 {
@@ -39,18 +41,50 @@ namespace SurvayBasket.Service.PollServices
 
 
 
-        public async Task<IReadOnlyList<PollResponse>> GetAll()
+        public async Task<Pagination<PollResponse>> GetAll(RequestFilter requestFilter, CancellationToken cancellationToken)
         {
 
-            var Polls = await dbContext.Polls.AsNoTracking().ToListAsync();
-            var PollRespons = mapper.Map<IReadOnlyList<PollResponse>>(Polls);
-            return PollRespons;
+            int SkipValue = (requestFilter.PageNumber - 1) * requestFilter.PageSize;
+
+            var Query = await dbContext.Polls
+                .Where(x =>
+                         string.IsNullOrEmpty(requestFilter.SearchValue)
+                          ||
+                         x.Title.ToLower().Contains(requestFilter.SearchValue.ToLower()))
+                .AsNoTracking()
+                .Select(P => new PollResponse(P.Id, P.Title, P.Summary))
+                .ToListAsync(cancellationToken);
+
+            if (!string.IsNullOrEmpty(requestFilter.OrderByAsc))
+                Query.OrderBy(p => p.Title);
+
+            if (!string.IsNullOrEmpty(requestFilter.OrderByDesc))
+                Query.OrderByDescending(p => p.Title);
+
+           
+            // Total count
+            int totalCount = Query.Count;
+
+
+            var PollResponseList = Query.Skip(SkipValue)
+              .Take(requestFilter.PageSize).ToList();
+
+
+
+            return new Pagination<PollResponse>()
+            {
+                Items = PollResponseList,
+                PageNumber = requestFilter.PageNumber,
+                Count = totalCount,
+                PageSize = requestFilter.PageSize
+            };
+
         }
 
         public async Task<IReadOnlyList<PollResponse>> GetCurrentAll()
         {
             var Polls = await dbContext.Polls
-                .AsNoTracking() 
+                .AsNoTracking()
                 .Where(x =>
                 x.IsPublished
                 &&

@@ -6,5 +6,7 @@ namespace SurvayBasket.Models
     {
         public string FristName { get; set; } = string.Empty!;
         public string LastName { get; set; } = string.Empty!;
+
+        public bool IsDisabled { get; set; }
     }
 }

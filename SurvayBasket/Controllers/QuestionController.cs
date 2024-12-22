@@ -1,12 +1,13 @@
-﻿using SurvayBasket.Contracts.Question;
-using SurvayBasket.Extentions;
-using SurvayBasket.Service.Question;
+﻿using Microsoft.AspNetCore.RateLimiting;
+using SurvayBasket.Contracts.Common;
 
 namespace SurvayBasket.Controllers
 {
     [Route("api/polls/{pollid}/[controller]")]
     [ApiController]
     [Authorize]
+    [EnableRateLimiting("concurrency")]
+   
     public class QuestionController : ControllerBase
     {
         private readonly IQuestionService questionService;
@@ -22,9 +23,9 @@ namespace SurvayBasket.Controllers
 
 
         [HttpGet]
-        public async Task<IActionResult> GetAllAsync([FromRoute] int pollid, CancellationToken cancellationToken)
+        public async Task<ActionResult<Pagination<QuestionResponse>>> GetAllAsync([FromRoute] int pollid, [FromQuery] RequestFilter requestFilter, CancellationToken cancellationToken)
         {
-            var (questionResponse, Message) = await questionService.GetAllAsync(pollid, cancellationToken);
+            var (questionResponse, Message) = await questionService.GetAllAsync(pollid,requestFilter, cancellationToken);
             if (!string.IsNullOrEmpty(Message))
                 return BadRequest(new APIErrorResponse(400, Message));
 
@@ -32,6 +33,7 @@ namespace SurvayBasket.Controllers
         }
 
         [HttpGet("Available")]
+        
         public async Task<IActionResult> GetAllAvailableAsync([FromRoute] int pollid, CancellationToken cancellationToken)
         {
             var UserId = User.GetUserId();
@@ -44,6 +46,7 @@ namespace SurvayBasket.Controllers
 
 
         [HttpGet("{id:int}")]
+        [DisableRateLimiting]
         public async Task<IActionResult> GetAsync([FromRoute] int pollid, int id, CancellationToken cancellationToken)
         {
             var (questionResponse, Message) = await questionService.GetAsync(pollid, id, cancellationToken);

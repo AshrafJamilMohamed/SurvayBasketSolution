@@ -1,10 +1,11 @@
-﻿using SurvayBasket.Contracts.Question;
+﻿using SurvayBasket.Contracts.Common;
+using SurvayBasket.Contracts.Question;
 
 namespace SurvayBasket.Service.Question
 {
     public interface IQuestionService
     {
-        public Task<(IReadOnlyList<QuestionResponse>? questionResponse, string? Message)> GetAllAsync(int PollId, CancellationToken cancellationToken);
+        public Task<(Pagination<QuestionResponse>? questionResponse, string? Message)> GetAllAsync(int PollId, RequestFilter requestFilter, CancellationToken cancellationToken);
         public Task<(IReadOnlyList<QuestionResponse>? questionResponse, string? Message)> GetAllAvailableAsync(int PollId, string UserId, CancellationToken cancellationToken);
         public Task<(QuestionResponse? questionResponse, string? Message)> GetAsync(int PollId, int id, CancellationToken cancellationToken);
         public Task<(bool Response, string? Message)> ToggleStatus(int PollId, int id, CancellationToken cancellationToken);

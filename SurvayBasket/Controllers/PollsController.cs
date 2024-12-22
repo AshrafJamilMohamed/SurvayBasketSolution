@@ -1,10 +1,14 @@
 ﻿
 
+using Microsoft.AspNetCore.RateLimiting;
+using SurvayBasket.Contracts.Common;
+
 namespace SurvayBasket.Controllers
 {
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
+    [EnableRateLimiting("IPLimiter")]
     public class PollsController : ControllerBase
     {
         private readonly IPollsService pollsService;
@@ -27,7 +31,8 @@ namespace SurvayBasket.Controllers
         [HttpGet("GetAll")]
         // [ResponseCache(Duration = 60)]
         [Authorize(Roles = DefaultRoles.Admin)]
-        public async Task<IActionResult> GetAll() => Ok(await pollsService.GetAll());
+        public async Task<ActionResult<Pagination<PollResponse>>> GetAll([FromQuery] RequestFilter requestFilter, CancellationToken cancellationToken = default)
+            => Ok(await pollsService.GetAll(requestFilter, cancellationToken));
 
         [HttpGet("current")]
         [Authorize(Roles = "Member")]

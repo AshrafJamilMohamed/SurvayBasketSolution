@@ -1,5 +1,6 @@
 ﻿
-using AutoMapper.QueryableExtensions;
+
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.WebUtilities;
 using SurvayBasket.Service.AuthService;
 
@@ -7,6 +8,7 @@ namespace SurvayBasket.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [EnableRateLimiting("IPLimiter")]
     public class AccountController : ControllerBase
     {
         private readonly ApplicationUser user;
@@ -55,7 +57,7 @@ namespace SurvayBasket.Controllers
                 return BadRequest(new APIErrorResponse(400, Result.Errors.First().Description));
 
 
-
+           
             var Code = await userManager.GenerateEmailConfirmationTokenAsync(NewUser);
             Code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(Code));
 
@@ -71,24 +73,32 @@ namespace SurvayBasket.Controllers
 
         public async Task<IActionResult> Login(LoginDTO LoginUser, CancellationToken cancellationToken = default)
         {
-
-
             var LoginedUser = await userManager.FindByEmailAsync(LoginUser.Email);
-            ;
-            if (LoginedUser is null) return Unauthorized();
-            if (!LoginedUser.EmailConfirmed) return BadRequest(new APIErrorResponse(400, "Email is not Confirmed"));
 
-            var Result = await signInManager.CheckPasswordSignInAsync(LoginedUser, LoginUser.Password, false);
+            if (LoginedUser is null)
+                return Unauthorized();
 
-            if (!Result.Succeeded) return Unauthorized();
-          var Roles=  await userManager.GetRolesAsync(LoginedUser);
+            if (!LoginedUser.EmailConfirmed)
+                return BadRequest(new APIErrorResponse(400, "Email is not Confirmed"));
+
+            if (LoginedUser.IsDisabled)
+                return Unauthorized(new APIErrorResponse(401, "The account is disabled , Contact the adminastrator"));
+
+            var Result = await signInManager.CheckPasswordSignInAsync(LoginedUser, LoginUser.Password, true);
+            if (Result.IsLockedOut)
+                return Unauthorized(new APIErrorResponse(401, "The account is disabled , Contact the adminastrator"));
+
+            if (!Result.Succeeded) 
+                return BadRequest(new APIErrorResponse(400, "Invalid Email Or Password"));
+
+            var Roles = await userManager.GetRolesAsync(LoginedUser);
 
             var User = new UserDTO()
             {
                 Email = LoginUser.Email,
                 FirstName = LoginedUser.FristName,
                 LastName = LoginedUser.LastName,
-                Token =  token.CreateToken(LoginedUser, Roles)
+                Token = token.CreateToken(LoginedUser, Roles, cancellationToken)
             };
             return Ok(User);
         }
@@ -157,6 +167,10 @@ namespace SurvayBasket.Controllers
                 return BadRequest(new APIErrorResponse(400, message));
             return Ok();
         }
+
+        // Test
+        [HttpGet("test")]
+        public IActionResult test() => Ok("testEndPoint");
 
     }
 }

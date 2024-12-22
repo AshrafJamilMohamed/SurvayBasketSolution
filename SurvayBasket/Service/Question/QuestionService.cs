@@ -1,5 +1,6 @@
 ﻿
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using SurvayBasket.Contracts.Common;
 using SurvayBasket.Models;
 using SurvayBasket.Service.Caching;
 
@@ -47,38 +48,51 @@ namespace SurvayBasket.Service.Question
             return (CachedQuestions, string.Empty);
         }
 
-        public async Task<(IReadOnlyList<QuestionResponse>? questionResponse, string? Message)> GetAllAsync(int PollId, CancellationToken cancellationToken)
+        public async Task<(Pagination<QuestionResponse>? questionResponse, string? Message)> GetAllAsync(int PollId, RequestFilter requestFilter, CancellationToken cancellationToken)
         {
-            var key = $"{_cachePrefix}-{PollId}";
-            // check caching 
-            var CachedQuesions = await cachingService.GetAsync<IReadOnlyList<QuestionResponse>>(key, cancellationToken);
 
-            if (CachedQuesions is null)
+            // Check if Poll Is Exit or not
+            var PollIsExits = await dbContext.Polls.AnyAsync(p => p.Id == PollId,cancellationToken);
+           
+            if (!PollIsExits)
+              return (null, "Poll Is Not Found");
+            
+
+            var Questions = await dbContext.Questions
+                .Where(x => x.PollId == PollId
+                    &&
+                    (
+                    string.IsNullOrEmpty(requestFilter.SearchValue)
+                    ||
+                    x.Content.ToLower().Contains(requestFilter.SearchValue.ToLower()))
+                    )
+                .Include(a => a.Answer)
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+
+            int TotalItems = Questions.Count;
+
+            if (!string.IsNullOrEmpty(requestFilter.OrderByAsc))
+                Questions.OrderBy(x => x.Content);
+
+            if (!string.IsNullOrEmpty(requestFilter.OrderByDesc))
+                Questions.OrderByDescending(x => x.Content);
+
+
+            var QuestionList = Questions.Skip((requestFilter.PageNumber - 1) * requestFilter.PageSize)
+                      .Take(requestFilter.PageSize).ToList();
+
+            var MappedQuestion = mapper.Map<List<QuestionResponse>>(QuestionList);
+
+            var QuestionResponse = new Pagination<QuestionResponse>()
             {
+                Items = MappedQuestion,
+                PageNumber = requestFilter.PageNumber,
+                PageSize = requestFilter.PageSize,
+                Count = TotalItems
+            };
 
-
-                // Check if Poll Is Exit or not
-                var PollIsExits = await dbContext.Polls.AnyAsync(p => p.Id == PollId, cancellationToken: cancellationToken);
-                var Message = string.Empty;
-                if (!PollIsExits)
-                {
-                    Message = "Poll Is Not Found";
-                    return (null, Message!);
-                }
-                var Questions = await dbContext.Questions
-                    .Where(x => x.PollId == PollId)
-                    .Include(a => a.Answer)
-                    .AsNoTracking()
-                    .ToListAsync(cancellationToken: cancellationToken);
-
-                var QuestionResponse = mapper.Map<IReadOnlyList<QuestionResponse>>(Questions);
-
-                await cachingService.SetAsync(key, QuestionResponse, cancellationToken);
-
-                return (QuestionResponse, null);
-            }
-            return (CachedQuesions, string.Empty);
-
+            return (QuestionResponse, null);
 
         }
 

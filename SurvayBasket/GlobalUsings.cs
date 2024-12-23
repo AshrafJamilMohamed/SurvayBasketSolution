@@ -33,6 +33,13 @@ global using SurvayBasket.Settings;
 global using System.ComponentModel.DataAnnotations;
 global using System.Security.Claims;
 global using System.Text;
+global using Microsoft.AspNetCore.RateLimiting;
+global using SurvayBasket.Service.Account;
+global using SurvayBasket.Service.AuthService;
+global using SurvayBasket.Service.ResultService;
+global using SurvayBasket.Service.RolesService;
+global using System.Threading.RateLimiting;
+
 
 
 

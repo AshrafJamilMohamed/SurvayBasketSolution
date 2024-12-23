@@ -1,7 +1,4 @@
-﻿
-using Microsoft.AspNetCore.RateLimiting;
-using SurvayBasket.Contracts.Vote;
-
+﻿using SurvayBasket.Contracts.Vote;
 
 namespace SurvayBasket.Controllers
 {

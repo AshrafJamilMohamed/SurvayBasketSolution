@@ -1,10 +1,5 @@
 ﻿
-using Microsoft.AspNetCore.RateLimiting;
-using SurvayBasket.Service.Account;
-using SurvayBasket.Service.AuthService;
-using SurvayBasket.Service.ResultService;
-using SurvayBasket.Service.RolesService;
-using System.Threading.RateLimiting;
+
 
 namespace SurvayBasket.DependancyInjection
 {
@@ -16,6 +11,7 @@ namespace SurvayBasket.DependancyInjection
 
             services.AddControllers();
             services.AddSwagger();
+            services.ApplyRateLimiting();
 
 
 
@@ -63,46 +59,6 @@ namespace SurvayBasket.DependancyInjection
             services.AddHealthChecks()
                     .AddDbContextCheck<ApplicationDbContext>("DataBase");
 
-            // Apply Rate Limiter
-
-            services.AddRateLimiter(Options =>
-            {
-                // in case of Many Requests have been sent
-                Options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-
-                // AddConcurrencyLimiter Configurations 
-                Options.AddConcurrencyLimiter("concurrency", Councurrencyoptions =>
-                {
-                    // Numbers of requests
-                    Councurrencyoptions.PermitLimit = 100;
-                    // In queue 
-                    Councurrencyoptions.QueueLimit = 50;
-                    // Crireria is FIFI
-                    Councurrencyoptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                });
-
-                Options.AddPolicy("IPLimiter", httpContext =>
-                RateLimitPartition.GetFixedWindowLimiter(
-
-               partitionKey: httpContext.Connection.RemoteIpAddress?.ToString(),
-               factory: _ => new FixedWindowRateLimiterOptions()
-               {
-                   PermitLimit = 15,
-                   Window = TimeSpan.FromSeconds(60)
-               }
-                ));
-
-                Options.AddPolicy("UserLimiter", httpContext =>
-                RateLimitPartition.GetFixedWindowLimiter(
-
-               partitionKey: httpContext.User.GetUserId()?.ToString(),
-               factory: _ => new FixedWindowRateLimiterOptions()
-               {
-                   PermitLimit = 15,
-                   Window = TimeSpan.FromSeconds(60)
-               }
-                ));
-            });
 
 
             return services;
@@ -191,5 +147,54 @@ namespace SurvayBasket.DependancyInjection
 
             return services;
         }
+
+        public static IServiceCollection ApplyRateLimiting(this IServiceCollection services)
+        {
+
+            return services.AddRateLimiter(Options =>
+               {
+                   // in case of Many Requests have been sent
+                   Options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+                   // AddConcurrencyLimiter Configurations 
+                   Options.AddConcurrencyLimiter("concurrency", Councurrencyoptions =>
+                   {
+                       // Numbers of requests
+                       Councurrencyoptions.PermitLimit = 100;
+                       // In queue 
+                       Councurrencyoptions.QueueLimit = 50;
+                       // Crireria is FIFI
+                       Councurrencyoptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                   });
+
+                   // IP Limiter
+                   Options.AddPolicy("IPLimiter", httpContext =>
+                   RateLimitPartition.GetFixedWindowLimiter(
+                  partitionKey: httpContext.Connection.RemoteIpAddress?.ToString(),
+                  factory: _ => new FixedWindowRateLimiterOptions()
+                  {
+                      PermitLimit = 15,
+                      Window = TimeSpan.FromSeconds(60)
+                  }
+                   ));
+
+                   // User Limiter
+                   Options.AddPolicy("UserLimiter", httpContext =>
+                   RateLimitPartition.GetFixedWindowLimiter(
+                   partitionKey: httpContext.User.GetUserId()?.ToString(),
+                   factory: _ => new FixedWindowRateLimiterOptions()
+                   {
+                       PermitLimit = 15,
+                       Window = TimeSpan.FromSeconds(60)
+                   }
+                   ));
+               });
+
+
+
+        }
+
+
     }
 }
+

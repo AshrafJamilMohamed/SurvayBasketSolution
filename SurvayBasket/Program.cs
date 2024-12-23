@@ -25,6 +25,7 @@ namespace SurvayBasket
 
             app.UseStatusCodePagesWithReExecute("/errors/{0}");
             app.UseHttpsRedirection();
+            app.UseHsts();
             app.UseCors("ServayBasketPolicy");
             app.UseAuthentication();
             app.UseAuthorization();

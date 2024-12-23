@@ -1,8 +1,4 @@
-﻿
-
-using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.AspNetCore.WebUtilities;
-using SurvayBasket.Service.AuthService;
+﻿using Microsoft.AspNetCore.WebUtilities;
 
 namespace SurvayBasket.Controllers
 {
@@ -168,9 +164,7 @@ namespace SurvayBasket.Controllers
             return Ok();
         }
 
-        // Test
-        [HttpGet("test")]
-        public IActionResult test() => Ok("testEndPoint");
+      
 
     }
 }

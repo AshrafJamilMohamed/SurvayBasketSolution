@@ -1,10 +1,4 @@
-﻿
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Microsoft.AspNetCore.RateLimiting;
-using SurvayBasket.Contracts.User;
-using SurvayBasket.Service.Account;
-
+﻿using SurvayBasket.Contracts.User;
 
 namespace SurvayBasket.Controllers
 {
@@ -44,10 +38,12 @@ namespace SurvayBasket.Controllers
             return result is true ? NoContent() : BadRequest(new APIErrorResponse(400, Message));
         }
 
+        #region Admin
+
         [HttpGet("all")]
         [Authorize(Roles = DefaultRoles.Admin)]
         public async Task<IActionResult> GetAll(CancellationToken cancellationToken = default)
-           => Ok(await userService.GetAllUsers(cancellationToken));
+          => Ok(await userService.GetAllUsers(cancellationToken));
 
         [HttpGet("user/{id}")]
         [Authorize(Roles = DefaultRoles.Admin)]
@@ -83,9 +79,12 @@ namespace SurvayBasket.Controllers
         [Authorize(Roles = DefaultRoles.Admin)]
         public async Task<IActionResult> UnLock([FromRoute] string id)
         {
-           
+
             var result = await userService.Unlock(id); ;
             return result ? NoContent() : BadRequest(new APIErrorResponse(400));
         }
+        #endregion
+
+
     }
 }

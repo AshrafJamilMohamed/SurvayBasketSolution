@@ -1,7 +1,7 @@
 ﻿using SurvayBasket.Contracts.Vote;
 
 namespace SurvayBasket.Controllers
-{
+{  
     [Route("api/polls/{pollId:int}/vote")]
     [ApiController]
     [Authorize(Roles = $"{DefaultRoles.Admin},{DefaultRoles.Member}")]

@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
+﻿
 namespace SurvayBasket.Contracts.Account
 {
     public sealed class ConfirmEmailRequest
